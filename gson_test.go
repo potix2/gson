@@ -16,7 +16,7 @@ func TestParse(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "string",
+			name: "single character",
 			args: args{text: `"a"`},
 			want: "a",
 		},
@@ -24,6 +24,11 @@ func TestParse(t *testing.T) {
 			name: "empty string",
 			args: args{text: `""`},
 			want: "",
+		},
+		{
+			name: "multiple character",
+			args: args{text: `"ab1234"`},
+			want: "ab1234",
 		},
 	}
 	for _, tt := range tests {
