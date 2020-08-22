@@ -30,6 +30,26 @@ func TestParse(t *testing.T) {
 			args: args{text: `"ab1234"`},
 			want: "ab1234",
 		},
+		{
+			name: "null",
+			args: args{text: `null`},
+			want: nil,
+		},
+		{
+			name:    "invalid token",
+			args:    args{text: `nil`},
+			wantErr: true,
+		},
+		{
+			name: "true",
+			args: args{text: `true`},
+			want: true,
+		},
+		{
+			name: "false",
+			args: args{text: `false`},
+			want: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
