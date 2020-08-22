@@ -17,8 +17,13 @@ func TestParse(t *testing.T) {
 	}{
 		{
 			name: "string",
-			args: args{text: "a"},
+			args: args{text: `"a"`},
 			want: "a",
+		},
+		{
+			name: "empty string",
+			args: args{text: `""`},
+			want: "",
 		},
 	}
 	for _, tt := range tests {
