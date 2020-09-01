@@ -2,6 +2,14 @@ package gson
 
 import "fmt"
 
+func expectToken(bytes []byte, pos int, expect byte) bool {
+	if pos >= len(bytes) {
+		return false
+	}
+
+	return bytes[pos] == expect
+}
+
 func isWhitespace(b byte) bool {
 	return b == ' ' || b == '\n' || b == '\r' || b == '\t'
 }
@@ -25,6 +33,10 @@ func parseValue(bytes []byte, pos int) (interface{}, int, error) {
 }
 
 func nextToken(bytes []byte, pos int) (interface{}, int, error) {
+	if pos >= len(bytes) {
+		return nil, pos, fmt.Errorf("try to scan next token but got end of input")
+	}
+
 	if bytes[pos] == '"' {
 		return parseString(bytes, pos)
 	} else if bytes[pos] == 'n' {
@@ -67,14 +79,14 @@ func parseFalse(bytes []byte, pos int) (interface{}, int, error) {
 func parseString(bytes []byte, pos int) (interface{}, int, error) {
 	start := pos + 1
 	var end int
-	for end = start; bytes[end] != '"'; end++ {
+	for end = start; !expectToken(bytes, end, '"'); end++ {
 	}
 	result := string(bytes[start:end])
 	return result, end + 1, nil
 }
 
 func parseArrayElem(bytes []byte, pos int) (interface{}, int, error) {
-	if bytes[pos] != ',' {
+	if !expectToken(bytes, pos, ',') {
 		return nil, 0, fmt.Errorf("expect ',' but got %v", bytes[pos])
 	}
 	return parseValue(bytes, pos+1)
@@ -86,12 +98,8 @@ func parseArray(bytes []byte, pos int) (interface{}, int, error) {
 	var val interface{}
 	var err error
 	pos = skipWhitespace(bytes, pos)
-	if pos == len(bytes) {
-		return nil, pos, fmt.Errorf("not found ']'")
-	}
-
 	// case: '[' -> whitespace -> ']'
-	if bytes[pos] == ']' {
+	if expectToken(bytes, pos, ']') {
 		return ret, pos + 1, nil
 	}
 
@@ -100,12 +108,12 @@ func parseArray(bytes []byte, pos int) (interface{}, int, error) {
 	if err != nil {
 		return nil, pos, err
 	}
-	ret = append(ret, val)
 	if pos == len(bytes) {
 		return nil, pos, fmt.Errorf("not found ']'")
 	}
+	ret = append(ret, val)
 
-	for bytes[pos] != ']' {
+	for !expectToken(bytes, pos, ']') {
 		// case: ',' -> value
 		val, pos, err = parseArrayElem(bytes, pos)
 		if err != nil {
