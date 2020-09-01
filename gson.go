@@ -3,11 +3,20 @@ package gson
 import "fmt"
 
 func expectToken(bytes []byte, pos int, expect byte) bool {
-	if pos >= len(bytes) {
-		return false
+	return pos < len(bytes) && bytes[pos] == expect
+}
+
+func consumeToken(bytes []byte, pos int, expect string) (string, error) {
+	l := len(expect)
+	if len(bytes) < pos+l {
+		return "", fmt.Errorf("unknown token")
+	}
+	token := string(bytes[pos:(pos + l)])
+	if token == expect {
+		return token, nil
 	}
 
-	return bytes[pos] == expect
+	return "", fmt.Errorf("expect %s, but got %s", expect, token)
 }
 
 func isWhitespace(b byte) bool {
@@ -53,27 +62,24 @@ func nextToken(bytes []byte, pos int) (interface{}, int, error) {
 }
 
 func parseNull(bytes []byte, pos int) (interface{}, int, error) {
-	if len(bytes)-pos >= 4 && bytes[pos] == 'n' && bytes[pos+1] == 'u' && bytes[pos+2] == 'l' && bytes[pos+3] == 'l' {
-		return nil, pos + 4, nil
-	} else {
-		return nil, pos, fmt.Errorf("unknown token")
+	if _, err := consumeToken(bytes, pos, "null"); err != nil {
+		return nil, pos, err
 	}
+	return nil, pos + 4, nil
 }
 
 func parseTrue(bytes []byte, pos int) (interface{}, int, error) {
-	if len(bytes)-pos >= 4 && bytes[pos] == 't' && bytes[pos+1] == 'r' && bytes[pos+2] == 'u' && bytes[pos+3] == 'e' {
-		return true, pos + 4, nil
-	} else {
-		return nil, pos, fmt.Errorf("unknown token")
+	if _, err := consumeToken(bytes, pos, "true"); err != nil {
+		return nil, pos, err
 	}
+	return true, pos + 4, nil
 }
 
 func parseFalse(bytes []byte, pos int) (interface{}, int, error) {
-	if len(bytes)-pos >= 5 && bytes[pos] == 'f' && bytes[pos+1] == 'a' && bytes[pos+2] == 'l' && bytes[pos+3] == 's' && bytes[pos+4] == 'e' {
-		return false, pos + 5, nil
-	} else {
-		return nil, pos, fmt.Errorf("unknown token")
+	if _, err := consumeToken(bytes, pos, "false"); err != nil {
+		return nil, pos, err
 	}
+	return false, pos + 5, nil
 }
 
 func parseString(bytes []byte, pos int) (interface{}, int, error) {
