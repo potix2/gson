@@ -14,6 +14,7 @@ func skipWhitespace(bytes []byte, pos int) int {
 }
 
 func parseValue(bytes []byte, pos int) (interface{}, int, error) {
+	// case whitespace -> value -> whitespace
 	pos = skipWhitespace(bytes, pos)
 	v, newpos, err := nextToken(bytes, pos)
 	if err != nil {
@@ -72,21 +73,49 @@ func parseString(bytes []byte, pos int) (interface{}, int, error) {
 	return result, end + 1, nil
 }
 
+func parseArrayElem(bytes []byte, pos int) (interface{}, int, error) {
+	if bytes[pos] != ',' {
+		return nil, 0, fmt.Errorf("expect ',' but got %v", bytes[pos])
+	}
+	return parseValue(bytes, pos+1)
+}
+
 func parseArray(bytes []byte, pos int) (interface{}, int, error) {
+	pos += 1
 	ret := make([]interface{}, 0)
-	pos = skipWhitespace(bytes, pos+1)
-	for pos < len(bytes) && bytes[pos] != ']' {
-		var val interface{}
-		var err error
-		val, pos, err = parseValue(bytes, pos)
+	var val interface{}
+	var err error
+	pos = skipWhitespace(bytes, pos)
+	if pos == len(bytes) {
+		return nil, pos, fmt.Errorf("not found ']'")
+	}
+
+	// case: '[' -> whitespace -> ']'
+	if bytes[pos] == ']' {
+		return ret, pos + 1, nil
+	}
+
+	// case: '[' -> value
+	val, pos, err = parseValue(bytes, pos)
+	if err != nil {
+		return nil, pos, err
+	}
+	ret = append(ret, val)
+	if pos == len(bytes) {
+		return nil, pos, fmt.Errorf("not found ']'")
+	}
+
+	for bytes[pos] != ']' {
+		// case: ',' -> value
+		val, pos, err = parseArrayElem(bytes, pos)
 		if err != nil {
 			return nil, pos, err
 		}
-		ret = append(ret, val)
-	}
 
-	if bytes[pos-1] != ']' && len(bytes) == pos {
-		return nil, pos, fmt.Errorf("not found ']'")
+		if pos == len(bytes) {
+			return nil, pos, fmt.Errorf("not found ']'")
+		}
+		ret = append(ret, val)
 	}
 	return ret, pos + 1, nil
 }

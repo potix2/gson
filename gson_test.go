@@ -147,14 +147,18 @@ func Test_parseArray(t *testing.T) {
 			want:  []interface{}{true},
 			want1: 8,
 		},
-		/*
-			{
-				name:  `[true,false]`,
-				input: `[ true, false ]`,
-				want:  []interface{}{true, false},
-				want1: 14,
-			},
-		*/
+		{
+			name:  `[true,false]`,
+			input: `[ true, false ]`,
+			want:  []interface{}{true, false},
+			want1: 15,
+		},
+		{
+			name:  `["a", "b"]`,
+			input: `[ "a" , "b" ]`,
+			want:  []interface{}{"a", "b"},
+			want1: 13,
+		},
 		{
 			name:    `[ `,
 			input:   `[ `,
