@@ -7,7 +7,7 @@ func isWhitespace(b byte) bool {
 }
 
 func skipWhitespace(bytes []byte, pos int) int {
-	for isWhitespace(bytes[pos]) {
+	for pos < len(bytes) && isWhitespace(bytes[pos]) {
 		pos++
 	}
 	return pos
@@ -68,11 +68,21 @@ func parseString(bytes []byte, pos int) (interface{}, int, error) {
 }
 
 func parseArray(bytes []byte, pos int) (interface{}, int, error) {
-	if len(bytes)-pos >= 2 && bytes[pos] == '[' && bytes[pos+1] == ']' {
-		return []interface{}{}, pos + 2, nil
-	} else {
-		return nil, pos, fmt.Errorf("unknown token")
+	ret := make([]interface{}, 0)
+	for pos = skipWhitespace(bytes, pos+1); pos < len(bytes) && bytes[pos] != ']'; pos = skipWhitespace(bytes, pos) {
+		var val interface{}
+		var err error
+		val, pos, err = parseValue(bytes, pos)
+		if err != nil {
+			return nil, pos, err
+		}
+		ret = append(ret, val)
 	}
+
+	if bytes[pos-1] != ']' && len(bytes) == pos {
+		return nil, pos, fmt.Errorf("not found ']'")
+	}
+	return ret, pos + 1, nil
 }
 
 func Parse(text string) (interface{}, error) {

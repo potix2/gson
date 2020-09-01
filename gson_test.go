@@ -66,44 +66,41 @@ func TestParse(t *testing.T) {
 }
 
 func Test_parseString(t *testing.T) {
-	type args struct {
-		text string
-	}
 	tests := []struct {
 		name    string
-		args    args
+		input   string
 		want    interface{}
 		want1   int
 		wantErr bool
 	}{
 		{
 			name:  "single character",
-			args:  args{text: `"a"`},
+			input: `"a"`,
 			want:  "a",
 			want1: 3,
 		},
 		{
 			name:  "trim string",
-			args:  args{text: `"a" `},
+			input: `"a" `,
 			want:  "a",
 			want1: 3,
 		},
 		{
 			name:  "empty string",
-			args:  args{text: `""`},
+			input: `""`,
 			want:  "",
 			want1: 2,
 		},
 		{
 			name:  "multiple character",
-			args:  args{text: `"ab1234"`},
+			input: `"ab1234"`,
 			want:  "ab1234",
 			want1: 8,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1, err := parseString([]byte(tt.args.text), 0)
+			got, got1, err := parseString([]byte(tt.input), 0)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("parseString() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -113,6 +110,68 @@ func Test_parseString(t *testing.T) {
 			}
 			if got1 != tt.want1 {
 				t.Errorf("parseString() got1 = %v, want %v", got1, tt.want1)
+			}
+		})
+	}
+}
+
+func Test_parseArray(t *testing.T) {
+	tests := []struct {
+		name    string
+		input   string
+		want    interface{}
+		want1   int
+		wantErr bool
+	}{
+		{
+			name:  "[]",
+			input: `[]`,
+			want:  []interface{}{},
+			want1: 2,
+		},
+		{
+			name:  "[ ]",
+			input: `[ ]`,
+			want:  []interface{}{},
+			want1: 3,
+		},
+		{
+			name:  `["a"]`,
+			input: `["a"]`,
+			want:  []interface{}{"a"},
+			want1: 5,
+		},
+		{
+			name:  `[true]`,
+			input: `[ true ]`,
+			want:  []interface{}{true},
+			want1: 8,
+		},
+		{
+			name:    `[ `,
+			input:   `[ `,
+			wantErr: true,
+			want1:   2,
+		},
+		{
+			name:    `["a"`,
+			input:   `["a"`,
+			wantErr: true,
+			want1:   4,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, got1, err := parseArray([]byte(tt.input), 0)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("parseArray() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("parseArray() got = %v, want %v", got, tt.want)
+			}
+			if got1 != tt.want1 {
+				t.Errorf("parseArray() got1 = %v, want %v", got1, tt.want1)
 			}
 		})
 	}
