@@ -41,14 +41,14 @@ func TestParse(t *testing.T) {
 			want: true,
 		},
 		{
+			name: "last whitespace",
+			args: args{text: ` true `},
+			want: true,
+		},
+		{
 			name: "false",
 			args: args{text: `false`},
 			want: false,
-		},
-		{
-			name: "empty array",
-			args: args{text: `[]`},
-			want: []interface{}{},
 		},
 	}
 	for _, tt := range tests {
@@ -147,6 +147,14 @@ func Test_parseArray(t *testing.T) {
 			want:  []interface{}{true},
 			want1: 8,
 		},
+		/*
+			{
+				name:  `[true,false]`,
+				input: `[ true, false ]`,
+				want:  []interface{}{true, false},
+				want1: 14,
+			},
+		*/
 		{
 			name:    `[ `,
 			input:   `[ `,
@@ -172,6 +180,56 @@ func Test_parseArray(t *testing.T) {
 			}
 			if got1 != tt.want1 {
 				t.Errorf("parseArray() got1 = %v, want %v", got1, tt.want1)
+			}
+		})
+	}
+}
+
+func Test_parseValue(t *testing.T) {
+	tests := []struct {
+		name    string
+		input   string
+		want    interface{}
+		want1   int
+		wantErr bool
+	}{
+		{
+			name:  "string",
+			input: `"a"`,
+			want:  "a",
+			want1: 3,
+		},
+		{
+			name:  "trim",
+			input: ` "a" `,
+			want:  "a",
+			want1: 5,
+		},
+		{
+			name:  "true",
+			input: `true`,
+			want:  true,
+			want1: 4,
+		},
+		{
+			name:  "null",
+			input: `null`,
+			want:  nil,
+			want1: 4,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, got1, err := parseValue([]byte(tt.input), 0)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("parseValue() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("parseValue() got = %v, want %v", got, tt.want)
+			}
+			if got1 != tt.want1 {
+				t.Errorf("parseValue() got1 = %v, want %v", got1, tt.want1)
 			}
 		})
 	}

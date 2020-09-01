@@ -15,7 +15,12 @@ func skipWhitespace(bytes []byte, pos int) int {
 
 func parseValue(bytes []byte, pos int) (interface{}, int, error) {
 	pos = skipWhitespace(bytes, pos)
-	return nextToken(bytes, pos)
+	v, newpos, err := nextToken(bytes, pos)
+	if err != nil {
+		return v, newpos, err
+	}
+	newpos = skipWhitespace(bytes, newpos)
+	return v, newpos, nil
 }
 
 func nextToken(bytes []byte, pos int) (interface{}, int, error) {
@@ -60,7 +65,7 @@ func parseFalse(bytes []byte, pos int) (interface{}, int, error) {
 
 func parseString(bytes []byte, pos int) (interface{}, int, error) {
 	start := pos + 1
-	end := start
+	var end int
 	for end = start; bytes[end] != '"'; end++ {
 	}
 	result := string(bytes[start:end])
@@ -69,7 +74,8 @@ func parseString(bytes []byte, pos int) (interface{}, int, error) {
 
 func parseArray(bytes []byte, pos int) (interface{}, int, error) {
 	ret := make([]interface{}, 0)
-	for pos = skipWhitespace(bytes, pos+1); pos < len(bytes) && bytes[pos] != ']'; pos = skipWhitespace(bytes, pos) {
+	pos = skipWhitespace(bytes, pos+1)
+	for pos < len(bytes) && bytes[pos] != ']' {
 		var val interface{}
 		var err error
 		val, pos, err = parseValue(bytes, pos)
