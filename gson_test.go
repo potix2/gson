@@ -55,10 +55,15 @@ func TestParse(t *testing.T) {
 			args: args{text: `0`},
 			want: 0,
 		},
+		{
+			name: "{}",
+			args: args{text: `{}`},
+			want: map[string]interface{}{},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := Parse(tt.args.text)
+			got, err := ParseString(tt.args.text)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Parse() error = %v, wantErr %v", err, tt.wantErr)
 				return

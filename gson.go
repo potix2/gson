@@ -113,6 +113,8 @@ func nextToken(bytes []byte, pos int) (interface{}, int, error) {
 		return parseFalse(bytes, pos)
 	case '[':
 		return parseArray(bytes, pos)
+	case '{':
+		return parseObject(bytes, pos)
 	default:
 		if isNumber(bytes[pos]) {
 			return parseNumber(bytes, pos)
@@ -250,7 +252,11 @@ func parseObject(bytes []byte, pos int) (interface{}, int, error) {
 	return ret, pos + 1, nil
 }
 
-func Parse(text string) (interface{}, error) {
-	result, _, err := parseValue([]byte(text), 0)
+func ParseString(text string) (interface{}, error) {
+	return Parse([]byte(text))
+}
+
+func Parse(bytes []byte) (interface{}, error) {
+	result, _, err := parseValue(bytes, 0)
 	return result, err
 }
