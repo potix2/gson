@@ -1,6 +1,9 @@
 package gson
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+)
 
 func expectToken(bytes []byte, pos int, expect byte) bool {
 	return pos < len(bytes) && bytes[pos] == expect
@@ -30,6 +33,47 @@ func skipWhitespace(bytes []byte, pos int) int {
 	return pos
 }
 
+func isDigit(b byte) bool {
+	return '0' <= b && b <= '9'
+}
+
+func isNumber(b byte) bool {
+	return b == '-' || isDigit(b)
+}
+
+func parseNumber(bytes []byte, pos int) (interface{}, int, error) {
+	begin := pos
+	end := pos + 1
+	if bytes[pos] == '-' {
+		end += 1
+	}
+	for end < len(bytes) && isDigit(bytes[end]) {
+		end += 1
+	}
+
+	if end == len(bytes) || bytes[end] != '.' {
+		ret, err := strconv.Atoi(string(bytes[begin:end]))
+		if err != nil {
+			return nil, pos, err
+		}
+		return ret, end, nil
+	}
+
+	//fraction
+	end += 1
+	for end < len(bytes) && isDigit(bytes[end]) {
+		end += 1
+	}
+
+	ret, err := strconv.ParseFloat(string(bytes[begin:end]), 64)
+	if err != nil {
+		return nil, pos, err
+	}
+	return ret, end, nil
+
+	//exponent
+}
+
 func parseValue(bytes []byte, pos int) (interface{}, int, error) {
 	// case whitespace -> value -> whitespace
 	pos = skipWhitespace(bytes, pos)
@@ -46,17 +90,22 @@ func nextToken(bytes []byte, pos int) (interface{}, int, error) {
 		return nil, pos, fmt.Errorf("try to scan next token but got end of input")
 	}
 
-	if bytes[pos] == '"' {
+	switch bytes[pos] {
+	case '"':
 		return parseString(bytes, pos)
-	} else if bytes[pos] == 'n' {
+	case 'n':
 		return parseNull(bytes, pos)
-	} else if bytes[pos] == 't' {
+	case 't':
 		return parseTrue(bytes, pos)
-	} else if bytes[pos] == 'f' {
+	case 'f':
 		return parseFalse(bytes, pos)
-	} else if bytes[pos] == '[' {
+	case '[':
 		return parseArray(bytes, pos)
-	} else {
+	default:
+		if isNumber(bytes[pos]) {
+			return parseNumber(bytes, pos)
+		}
+
 		return nil, -1, fmt.Errorf("unknown token")
 	}
 }

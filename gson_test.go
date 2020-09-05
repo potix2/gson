@@ -50,6 +50,11 @@ func TestParse(t *testing.T) {
 			args: args{text: `false`},
 			want: false,
 		},
+		{
+			name: "number",
+			args: args{text: `0`},
+			want: 0,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -234,6 +239,74 @@ func Test_parseValue(t *testing.T) {
 			}
 			if got1 != tt.want1 {
 				t.Errorf("parseValue() got1 = %v, want %v", got1, tt.want1)
+			}
+		})
+	}
+}
+
+func Test_parseNumber(t *testing.T) {
+	tests := []struct {
+		name    string
+		input   string
+		want    interface{}
+		want1   int
+		wantErr bool
+	}{
+		{
+			name:  "0",
+			input: "0",
+			want:  0,
+			want1: 1,
+		},
+		{
+			name:  "9",
+			input: "9",
+			want:  9,
+			want1: 1,
+		},
+		{
+			name:  "-1",
+			input: "-1",
+			want:  -1,
+			want1: 2,
+		},
+		{
+			name:  "10",
+			input: "10",
+			want:  10,
+			want1: 2,
+		},
+		{
+			name:  "01",
+			input: "01",
+			want:  1,
+			want1: 2,
+		},
+		{
+			name:  "1.3",
+			input: "1.3",
+			want:  1.3,
+			want1: 3,
+		},
+		{
+			name:  "-1.234",
+			input: "-1.234",
+			want:  -1.234,
+			want1: 6,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, got1, err := parseNumber([]byte(tt.input), 0)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("parseNumber() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("parseNumber() got = %v, want %v", got, tt.want)
+			}
+			if got1 != tt.want1 {
+				t.Errorf("parseNumber() got1 = %v, want %v", got1, tt.want1)
 			}
 		})
 	}
