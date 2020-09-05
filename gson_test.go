@@ -294,6 +294,32 @@ func Test_parseNumber(t *testing.T) {
 			want:  -1.234,
 			want1: 6,
 		},
+		{
+			name:  "1.2e+2",
+			input: "1.2e+2",
+			want:  120.0,
+			want1: 6,
+		},
+		{
+			name:  "1.2e-2",
+			input: "1.2e-2",
+			want:  0.0120,
+			want1: 6,
+		},
+		{
+			name:    "1.2e",
+			input:   "1.2e",
+			want:    nil,
+			want1:   4,
+			wantErr: true,
+		},
+		{
+			name:    "1.2e=2",
+			input:   "1.2e=2",
+			want:    nil,
+			want1:   4,
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

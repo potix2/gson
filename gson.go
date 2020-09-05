@@ -65,13 +65,25 @@ func parseNumber(bytes []byte, pos int) (interface{}, int, error) {
 		end += 1
 	}
 
+	//exponent
+	if end < len(bytes) && (bytes[end] == 'e' || bytes[end] == 'E') {
+		end += 1
+		if end == len(bytes) || (bytes[end] != '+' && bytes[end] != '-') {
+			return nil, end, fmt.Errorf("invalid number format: %s", string(bytes[begin:end]))
+		}
+
+		end += 1
+		for end < len(bytes) && isDigit(bytes[end]) {
+			end += 1
+		}
+	}
+
 	ret, err := strconv.ParseFloat(string(bytes[begin:end]), 64)
 	if err != nil {
 		return nil, pos, err
 	}
 	return ret, end, nil
 
-	//exponent
 }
 
 func parseValue(bytes []byte, pos int) (interface{}, int, error) {
