@@ -152,17 +152,22 @@ func parseString(bytes []byte, pos int) (interface{}, int, error) {
 	return result, end + 1, nil
 }
 
-func parseArrayElem(bytes []byte, pos int) (interface{}, int, error) {
-	if !expectToken(bytes, pos, ',') {
-		return nil, 0, fmt.Errorf("expect ',' but got %v", bytes[pos])
+func parseArrayElem(bytes []byte, pos int, ret []interface{}) ([]interface{}, int, error) {
+	val, pos, err := parseValue(bytes, pos)
+	if err != nil {
+		return nil, pos, err
 	}
-	return parseValue(bytes, pos+1)
+
+	if pos == len(bytes) {
+		return nil, pos, fmt.Errorf("not found ']'")
+	}
+	ret = append(ret, val)
+	return ret, pos, nil
 }
 
 func parseArray(bytes []byte, pos int) (interface{}, int, error) {
 	pos += 1
 	ret := make([]interface{}, 0)
-	var val interface{}
 	var err error
 	pos = skipWhitespace(bytes, pos)
 	// case: '[' -> whitespace -> ']'
@@ -171,26 +176,76 @@ func parseArray(bytes []byte, pos int) (interface{}, int, error) {
 	}
 
 	// case: '[' -> value
+	ret, pos, err = parseArrayElem(bytes, pos, ret)
+	if err != nil {
+		return nil, pos, err
+	}
+
+	for !expectToken(bytes, pos, ']') {
+		// case: ',' -> value
+		if !expectToken(bytes, pos, ',') {
+			return nil, 0, fmt.Errorf("expect ',' but got %s", string(bytes[pos]))
+		}
+
+		ret, pos, err = parseArrayElem(bytes, pos+1, ret)
+		if err != nil {
+			return nil, pos, err
+		}
+	}
+
+	return ret, pos + 1, nil
+}
+
+func parseObjectItem(bytes []byte, pos int, ret map[string]interface{}) (map[string]interface{}, int, error) {
+	pos = skipWhitespace(bytes, pos)
+	var key, val interface{}
+	var err error
+	key, pos, err = parseString(bytes, pos)
+	if err != nil {
+		return nil, pos, err
+	}
+	pos = skipWhitespace(bytes, pos)
+	if bytes[pos] != ':' {
+		return nil, pos, fmt.Errorf("expect ':', but got %s", string(bytes[pos]))
+	}
+	pos += 1
 	val, pos, err = parseValue(bytes, pos)
 	if err != nil {
 		return nil, pos, err
 	}
-	if pos == len(bytes) {
-		return nil, pos, fmt.Errorf("not found ']'")
-	}
-	ret = append(ret, val)
 
-	for !expectToken(bytes, pos, ']') {
-		// case: ',' -> value
-		val, pos, err = parseArrayElem(bytes, pos)
+	if pos == len(bytes) {
+		return nil, pos, fmt.Errorf("not found '}'")
+	}
+
+	ret[key.(string)] = val
+	return ret, pos, nil
+}
+
+func parseObject(bytes []byte, pos int) (interface{}, int, error) {
+	pos += 1
+	ret := make(map[string]interface{}, 0)
+	pos = skipWhitespace(bytes, pos)
+	// case: '{' -> whitespace -> '}'
+	if expectToken(bytes, pos, '}') {
+		return ret, pos + 1, nil
+	}
+
+	var err error
+	ret, pos, err = parseObjectItem(bytes, pos, ret)
+	if err != nil {
+		return nil, pos, err
+	}
+
+	for !expectToken(bytes, pos, '}') {
+		if !expectToken(bytes, pos, ',') {
+			return nil, pos, fmt.Errorf("expect ',', but got %s", string(bytes[pos]))
+		}
+
+		ret, pos, err = parseObjectItem(bytes, pos+1, ret)
 		if err != nil {
 			return nil, pos, err
 		}
-
-		if pos == len(bytes) {
-			return nil, pos, fmt.Errorf("not found ']'")
-		}
-		ret = append(ret, val)
 	}
 	return ret, pos + 1, nil
 }

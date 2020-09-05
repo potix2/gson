@@ -337,3 +337,53 @@ func Test_parseNumber(t *testing.T) {
 		})
 	}
 }
+
+func Test_parseObject(t *testing.T) {
+	tests := []struct {
+		name    string
+		input   string
+		want    interface{}
+		want1   int
+		wantErr bool
+	}{
+		{
+			name:  "empty",
+			input: "{}",
+			want:  map[string]interface{}{},
+			want1: 2,
+		},
+		{
+			name:  "{ }",
+			input: "{ }",
+			want:  map[string]interface{}{},
+			want1: 3,
+		},
+		{
+			name:  `{"a": 1}`,
+			input: `{"a": 1}`,
+			want:  map[string]interface{}{"a": 1},
+			want1: 8,
+		},
+		{
+			name:  `{"a": 1 , "b" : 2}`,
+			input: `{"a": 1 , "b" : 2}`,
+			want:  map[string]interface{}{"a": 1, "b": 2},
+			want1: 18,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, got1, err := parseObject([]byte(tt.input), 0)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("parseObject() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("parseObject() got = %v, want %v", got, tt.want)
+			}
+			if got1 != tt.want1 {
+				t.Errorf("parseObject() got1 = %v, want %v", got1, tt.want1)
+			}
+		})
+	}
+}
